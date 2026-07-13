@@ -1,0 +1,9 @@
+{
+  "trailingSlash": "auto",
+  "responseOverrides": {
+    "404": {
+      "redirect": "https://domains.webcat.net",
+      "statusCode": 302
+    }
+  }
+}

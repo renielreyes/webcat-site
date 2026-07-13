@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Webcat.net Corp — IT Services, Software &amp; Domains</title>
+<meta name="description" content="Webcat.net Corp provides managed IT services, WebLab calibration-lab software, domain registration, and (soon) AI services for small companies.">
+<meta property="og:title" content="Webcat.net Corp">
+<meta property="og:description" content="IT services · WebLab software · Domains · AI services (coming soon)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A2540'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='34' font-weight='bold' fill='%2300E0C0' text-anchor='middle'%3Ew.%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#071A2F; --navy:#0A2540; --panel:#0E2C4C; --line:rgba(148,184,220,.16);
+    --ink:#EAF2FA; --muted:#9DB4CC; --teal:#00E0C0; --teal-deep:#00BFA6; --cyan:#06B6D4; --violet:#A78BFA;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',system-ui,sans-serif; color:var(--ink); line-height:1.6;
+    background:radial-gradient(900px 500px at 85% -10%, rgba(6,182,212,.16), transparent 60%),
+               radial-gradient(700px 450px at -10% 110%, rgba(0,224,192,.10), transparent 55%),
+               linear-gradient(160deg, var(--navy-deep), var(--navy) 55%, #081F38);
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  body{overflow-x:clip;}
+  .shell{width:100%; max-width:1080px; margin:0 auto; padding:0 28px;}
+  @media(max-width:560px){.shell{padding:0 20px;}}
+  header{padding:26px 0;}
+  .bar{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+  .wordmark{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; letter-spacing:-.01em;}
+  .wordmark .net{color:var(--teal);}
+  .wordmark .corp{display:block; font-size:9px; font-weight:600; letter-spacing:.44em; color:var(--muted); margin-top:1px;}
+  .mail-link{font-size:14px; font-weight:500; color:var(--teal); text-decoration:none; border:1px solid rgba(0,224,192,.35); padding:9px 16px; border-radius:999px; transition:background .2s;}
+  .mail-link:hover{background:rgba(0,224,192,.1);}
+  main{flex:1; display:flex; flex-direction:column; justify-content:center; padding:34px 0 46px;}
+  .kicker{font-size:12px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--teal); margin-bottom:14px; max-width:100%;}
+  @media(max-width:560px){.kicker{letter-spacing:.14em;}}
+  h1{font-family:'Space Grotesk',sans-serif; font-size:clamp(30px,4.6vw,50px); line-height:1.12; letter-spacing:-.015em; max-width:720px;}
+  h1 .grad{background:linear-gradient(90deg,var(--teal),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .sub{margin-top:16px; font-size:17px; color:var(--muted); max-width:640px;}
+  .sub strong{color:var(--ink); font-weight:600;}
+  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:44px;}
+  @media(max-width:960px){.grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr;}}
+  .grid, .card{min-width:0;}
+  .card{
+    background:linear-gradient(180deg, rgba(20,50,84,.55), rgba(14,44,76,.35));
+    border:1px solid var(--line); border-radius:16px; padding:20px 18px 18px; min-height:172px;
+    display:flex; flex-direction:column; gap:8px; position:relative;
+  }
+  .card svg{width:26px; height:26px; margin-bottom:2px;}
+  .card h2{font-family:'Space Grotesk',sans-serif; font-size:16.5px; font-weight:700; letter-spacing:-.01em;}
+  .card p{font-size:13.5px; color:var(--muted); line-height:1.5;}
+  .card a{color:var(--teal); text-decoration:none; font-size:13.5px; font-weight:600; margin-top:auto;}
+  .card a:hover{text-decoration:underline;}
+  .chip{position:absolute; top:14px; right:14px; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--violet); border:1px solid rgba(167,139,250,.4); background:rgba(124,58,237,.12); padding:4px 9px; border-radius:999px;}
+  .cta-row{margin-top:38px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+  .cta{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15.5px; color:#04121F;
+    background:linear-gradient(90deg,var(--teal),var(--cyan)); text-decoration:none;
+    padding:13px 26px; border-radius:12px; box-shadow:0 8px 24px rgba(0,224,192,.25);
+  }
+  .cta-note{font-size:13.5px; color:var(--muted);}
+  footer{border-top:1px solid var(--line); padding:20px 0 26px;}
+  .foot{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted);}
+  .foot .fam strong{color:var(--ink); font-weight:600;}
+  .foot a{color:var(--teal); text-decoration:none;}
+</style>
+</head>
+<body>
+  <header class="shell">
+    <div class="bar">
+      <div class="wordmark">webcat<span class="net">.net</span><span class="corp">C O R P</span></div>
+      <a class="mail-link" href="mailto:reny@webcat.net">reny@webcat.net</a>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="kicker">A new webcat.net is under construction</div>
+    <h1>The site is being rebuilt.<br>The company is <span class="grad">open for business.</span></h1>
+    <p class="sub"><strong>Webcat.net Corp</strong> is a technology services and software company. While the new site takes shape, here's what we do — and how to reach us today.</p>
+    <p class="sub" style="font-size:14px; margin-top:10px;">Looking for the domain storefront? It moved to <a href="https://domains.webcat.net" style="color:var(--teal); text-decoration:none; font-weight:600;">domains.webcat.net</a>.</p>
+
+    <div class="grid">
+      <div class="card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00E0C0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><circle cx="6.5" cy="7" r="1" fill="#00E0C0" stroke="none"/><circle cx="6.5" cy="17" r="1" fill="#00E0C0" stroke="none"/></svg>
+        <h2>Managed IT Services</h2>
+        <p>Hands-on IT support, infrastructure, and consulting for small and mid-size businesses that need it done right.</p>
+        <a href="mailto:reny@webcat.net?subject=IT%20Services%20inquiry">Get in touch →</a>
+      </div>
+      <div class="card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M5 8a7 7 0 1 0 14 0"/><path d="M5 8h14"/><path d="M8 21h8"/><path d="M12 15v6"/></svg>
+        <h2>WebLab</h2>
+        <p>Our calibration-lab management platform — scheduling, equipment, and certificates in one place. In production with our first lab customer.</p>
+        <a href="mailto:reny@webcat.net?subject=WebLab%20demo%20request">Request a demo →</a>
+      </div>
+      <div class="card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00E0C0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg>
+        <h2>Domain Registration</h2>
+        <p>Search, register, and manage domains through our full-service storefront, powered by GoDaddy.</p>
+        <a href="https://domains.webcat.net">Find your domain →</a>
+      </div>
+      <div class="card">
+        <span class="chip">Coming soon</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.9 4.6 1.9 5.6 6.5 6.5c-4.6.9-5.6 1.9-6.5 6.5c-.9-4.6-1.9-5.6-6.5-6.5C10.1 8.6 11.1 7.6 12 3Z"/><path d="M19 14c.4 2 .9 2.5 3 3c-2.1.5-2.6 1-3 3c-.4-2-.9-2.5-3-3c2.1-.5 2.6-1 3-3Z"/></svg>
+        <h2>AI Services</h2>
+        <p>Practical AI adoption for small companies — from first workflow to full rollout. Launching soon.</p>
+        <a href="mailto:reny@webcat.net?subject=AI%20Services%20waitlist">Join the waitlist →</a>
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <a class="cta" href="mailto:reny@webcat.net">Contact us</a>
+      <span class="cta-note">Direct line to the owner. Replies from a human — assisted by AI.</span>
+    </div>
+  </main>
+
+  <footer class="shell">
+    <div class="foot">
+      <span class="fam"><strong>Webcat.net Corp</strong> family: WebLab · Webcat Domains · Rookie Shots</span>
+      <span>© 2026 Webcat.net Corp · <a href="mailto:reny@webcat.net">reny@webcat.net</a></span>
+    </div>
+  </footer>
+</body>
+</html>
