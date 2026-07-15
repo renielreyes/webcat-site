@@ -1,0 +1,23 @@
+{
+  "task": "zone-diff",
+  "runId": "r1",
+  "status": "success",
+  "summary": [
+    "Added scripts/zone-diff.py: a standard-library Python 3 tool comparing two DNS zone snapshots.",
+    "Prints ADDED/REMOVED/CHANGED sections plus a verdict; exit 0 match, 1 differences, 2 usage error.",
+    "Tolerant parsing (ignores blank/comment lines, collapses whitespace, case-insensitive name+type).",
+    "Added scripts/README.md with a worked example; --selftest runs 4 built-in cases and all pass.",
+    "Opened PR #4 and stopped at 'PR ready' — no merge, no deploy, nothing outside this repo."
+  ],
+  "branch": "handoff/zone-diff.r1",
+  "pr": "https://github.com/renielreyes/webcat-site/pull/4",
+  "filesChanged": [
+    "scripts/zone-diff.py",
+    "scripts/README.md",
+    "results/zone-diff.r1.json"
+  ],
+  "model": "claude-opus-4-8[1m]",
+  "started": "2026-07-15T02:50:00Z",
+  "finished": "2026-07-15T02:56:00Z",
+  "notes": "Canary task #1 per the charter (read-only helper, touches nothing live). Verified end-to-end before opening the PR: --selftest all pass; identical files -> MATCH/exit 0; add+remove+change (incl. TTL change and case-insensitive name match) -> correct sections/exit 1; usage errors -> exit 2; the README worked example matches actual output. No blockers. Hard stop at 'PR ready' — human merge is the only deploy."
+}
