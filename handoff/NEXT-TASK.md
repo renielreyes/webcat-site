@@ -1,24 +1,23 @@
 # Task
 
-*(Placeholder — no task selected. The loop skips this file while it contains the word
-"placeholder", and halts entirely if a `handoff/STOP` file exists. Cowork or Reny replaces
-this with a real task via a pull request; merging that PR is the approval that lets the loop run it.)*
-
 ## What I want
-(One or two plain sentences.)
+Create a new file `docs/loop-proof.md` containing a short, friendly note (5-8 lines) confirming that
+Webcat.net Corp's automated AI Brain relay loop is working: Cowork drafts a task, Reny approves it by
+merging, the every-2-minute timer on the NUC catches it, and the caged webcat-worker builds it
+headless and opens a pull request — all with no human at the keyboard. Mention the date (2026-07-14).
 
 ## Where
-(A page, file, or folder hint. Rough is fine.)
+New `docs/` folder in this repository.
 
 ## Done looks like
-(How we'll know it worked.)
+`docs/loop-proof.md` exists with the note. That's it — a tiny proof-of-life file.
 
 ## Model
-(local/free · GLM (cheap) · Claude Sonnet · Claude Opus · "Cowork, you pick")
+Claude (the subscription the worker is signed in with).
 
 ## Rules
 - The charter (`Infra/AI Executor Charter.md`) is binding. Work ONLY in this repository.
-- Branch `handoff/<short-name>`, commit, push, open a PR with a plain-English summary.
-- Write a result JSON under `results/` per the results contract.
+- Branch `handoff/loop-proof.r1`, commit, push, open a PR with a plain-English summary.
+- Write `results/loop-proof.r1.json` per the results contract.
 - HARD STOP at "PR ready" — never merge, never deploy, never touch DNS/GoDaddy/Azure/WebLab.
 - If anything is unclear or risky: stop, and explain in plain English in the result file and PR.
