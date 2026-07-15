@@ -27,3 +27,4 @@ handoff/               ← the AI Brain mailbox (tasks in, results back as PRs)
 ## Status
 
 - 2026-07-13 — repo created; holding page ready; cutover pending (see runbook Phase 0–B).
+- 2026-07-14 — relay loop wired (driver, mailbox rules, results contract, cage verified); repo public; main branch protected.
