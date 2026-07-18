@@ -1,17 +1,26 @@
 # Command Center — example config.
 # Copy to ~/.webcat-loop/cc.toml (or point CC_CONFIG at it) and adjust.
-# NO SECRETS HERE. The owner merge key (Phase 3) is referenced ONLY by a file
-# path (merge_key_path); its value is never stored in this file or the repo.
+# NO SECRETS HERE. The owner merge key is referenced ONLY by a file path
+# (merge_key_path); its value is never stored in this file or the repo.
 
 repo_dir       = "~/projects/webcat-site"        # the worker's clone on this machine
 repo_full      = "renielreyes/webcat-site"       # owner/name of the GitHub repo
 mailbox_branch = "mailbox"                        # task mailbox lives OFF the deploy branch
-stop_file      = "~/.webcat-loop/STOP"            # local, instant kill switch
-log_file       = "~/.webcat-loop/command-log.jsonl"
-state_file     = "~/.webcat-loop/pending.json"   # the single in-flight change
-lock_file      = "~/.webcat-loop/runner.lock"
 live_url       = "https://purple-meadow-0b838cc0f.7.azurestaticapps.net"
 owner_username = "renielreyes"
 robot_username = "webcat-worker-bot"
 
-# merge_key_path = "/home/owner/.secrets/cc-merge-key"   # Phase 3 only; 0600, unreadable by the worker
+# --- per-project runtime state (isolation) ---
+# EACH PROJECT MUST HAVE ITS OWN state_dir. The four runtime files (STOP, pending.json,
+# runner.lock, command-log.jsonl) are DERIVED from it automatically, so two projects can
+# never share in-flight state and ship the wrong change. The engine refuses to load two
+# projects whose state paths collide.
+state_dir      = "~/.webcat-loop"                 # for a 2nd project: ~/.webcat-cc/projects/<name>/
+
+# --- deploy target ---
+# azure_swa = a website on Azure Static Web Apps (poll the deploy check + live-check).
+# none      = a code project with no website (ship = merge; no preview URL, no live-check).
+deploy_kind    = "azure_swa"
+deploy_check   = "Build and Deploy Job"           # the CI check that means "deploy finished" (azure_swa)
+
+# merge_key_path = "/home/owner/.webcat-cc/ship-key"   # ship/undo only; 0600, unreadable by the worker

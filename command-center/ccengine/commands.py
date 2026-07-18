@@ -98,6 +98,19 @@ def preview(cfg, provider, state_store: StateStore) -> Result:
                       "Tell me and I'll sort it out.")
 
     pr = open_prs[0]
+
+    # A no-deploy (code) project has no live preview URL by design — pin what's built and
+    # point the owner at the PR to review, so ship can still publish exactly this commit.
+    if cfg.deploy_kind == "none":
+        st = pending or Pending(task=pr["title"], created_ts=now_iso())
+        st.pr_number = pr["number"]
+        st.previewed_sha = pr["head_sha"]
+        state_store.set(st)
+        return Result("ok",
+                      f'Change #{pr["number"]} "{pr["title"]}" is built. This project has no live preview — '
+                      "review the change, then type  ship  to merge it.",
+                      fields={"pr": pr["number"], "previewed_sha": pr["head_sha"]})
+
     url = provider.preview_url(pr["number"])
 
     st = pending or Pending(task=pr["title"], created_ts=now_iso())
@@ -186,8 +199,17 @@ def ship(cfg, provider, state_store: StateStore, *,
                       "type  status , then try  ship  again or  hold  it.", exit_code=1)
 
     merge_sha = provider.default_branch_sha("main") or ""
+    base_fields = {"pr": num, "merge_sha": merge_sha, "title": title, "previewed_sha": pinned}
 
-    # Deploy-aware: don't claim "live" until the deploy check actually finishes.
+    # No-deploy project: the merge IS the publish — nothing to poll or live-check.
+    if cfg.deploy_kind == "none":
+        state_store.clear()
+        return Result("ok",
+                      f'Published "{title}" (change #{num}) — merged. '
+                      "(This project has no live-site check, so there's nothing more to confirm.)",
+                      fields={**base_fields, "deploy": "n/a"})
+
+    # Deploy-aware (azure_swa): don't claim "live" until the deploy check actually finishes.
     conclusion = None
     if merge_sha:
         conclusion = _await_deploy(provider, merge_sha, cfg.deploy_check,
@@ -195,8 +217,7 @@ def ship(cfg, provider, state_store: StateStore, *,
     live = provider.live_check(cfg.live_url)
 
     state_store.clear()   # this change is done — clear the slot for the next one
-    fields = {"pr": num, "merge_sha": merge_sha, "title": title,
-              "previewed_sha": pinned, "deploy": conclusion or "unknown"}
+    fields = {**base_fields, "deploy": conclusion or "unknown"}
 
     if conclusion == "success" and live["ok"]:
         return Result("ok",

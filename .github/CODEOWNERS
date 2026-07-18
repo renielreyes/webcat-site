@@ -1,0 +1,20 @@
+# CODEOWNERS — control-plane lock (council fix, 2026-07-18)
+#
+# These paths are the "control plane": the CI that deploys, the engine that publishes,
+# and the guardrail documents the caged worker reads at runtime. A change to any of them
+# by the worker (or anyone) must be reviewed by the owner before it can merge — so a
+# poisoned or hallucinated task can never quietly rewrite the rules or the publisher.
+#
+# ENFORCEMENT NOTE: this file only bites when the branch ruleset has
+# "Require review from Code Owners" turned ON. That toggle is an owner action in
+# GitHub → repo Settings → Rules/Branches. Until then this file is documentation.
+
+# CI / deploy workflows — the AI must never be able to change how the site deploys.
+/.github/                         @renielreyes
+
+# The Command Center engine — the one program that holds every project's merge key.
+/command-center/                  @renielreyes
+
+# The runtime guardrails the worker is fed each build (charter + driver prompt).
+/Infra/AI Executor Charter.md     @renielreyes
+/Infra/driver-prompt.md           @renielreyes

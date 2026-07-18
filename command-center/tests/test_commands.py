@@ -285,5 +285,38 @@ class TestShip(ShipBase):
         self.assertIsNotNone(self.state.get())                # merge failed -> change still pending
 
 
+class NoLiveCheckProvider(FakeProvider):
+    """A provider that fails the test loudly if ship tries to deploy-poll or live-check
+    a no-deploy project (deploy_kind='none' must skip both)."""
+    def deploy_conclusion(self, sha, check_name):
+        raise AssertionError("deploy_conclusion must NOT be called for deploy_kind=none")
+
+    def live_check(self, url):
+        raise AssertionError("live_check must NOT be called for deploy_kind=none")
+
+
+class TestDeployKindNone(ShipBase):
+    def setUp(self):
+        super().setUp()
+        self.cfg.deploy_kind = "none"
+
+    def test_ship_none_merges_and_skips_deploy(self):
+        self.previewed(number=11, sha="deadbeef")
+        prov = NoLiveCheckProvider(prs=[pr(11, "a code change", sha="deadbeef")], merge_sha="mainsha9")
+        r = self.ship(prov)
+        self.assertEqual(r.outcome, "ok")
+        self.assertIn("merged", r.message)
+        self.assertEqual(prov.merged, [(11, "deadbeef")])     # still gated + SHA-pinned
+        self.assertEqual(r.fields["merge_sha"], "mainsha9")   # still recorded for undo
+        self.assertIsNone(self.state.get())                   # slot cleared
+
+    def test_preview_none_pins_without_a_url(self):
+        prov = NoLiveCheckProvider(prs=[pr(12, "a code change", sha="cafef00d")])
+        r = commands.preview(self.cfg, prov, self.state)
+        self.assertEqual(r.outcome, "ok")
+        self.assertIn("no live preview", r.message)
+        self.assertEqual(self.state.get().previewed_sha, "cafef00d")   # pinned so ship works
+
+
 if __name__ == "__main__":
     unittest.main()
