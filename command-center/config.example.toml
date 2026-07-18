@@ -8,6 +8,7 @@ repo_full      = "renielreyes/webcat-site"       # owner/name of the GitHub repo
 mailbox_branch = "mailbox"                        # task mailbox lives OFF the deploy branch
 stop_file      = "~/.webcat-loop/STOP"            # local, instant kill switch
 log_file       = "~/.webcat-loop/command-log.jsonl"
+state_file     = "~/.webcat-loop/pending.json"   # the single in-flight change
 lock_file      = "~/.webcat-loop/runner.lock"
 live_url       = "https://purple-meadow-0b838cc0f.7.azurestaticapps.net"
 owner_username = "renielreyes"

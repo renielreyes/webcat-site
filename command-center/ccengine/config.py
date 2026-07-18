@@ -24,6 +24,8 @@ DEFAULTS = {
     "stop_file": "~/.webcat-loop/STOP",
     # Append-only, write-ahead command log (JSON lines).
     "log_file": "~/.webcat-loop/command-log.jsonl",
+    # The single in-flight change ("pending") state.
+    "state_file": "~/.webcat-loop/pending.json",
     # Single-flight lock for mutating commands.
     "lock_file": "~/.webcat-loop/runner.lock",
     # The live site URL (used by status/ship/undo to confirm a deploy is really live).
@@ -46,6 +48,7 @@ class Config:
     mailbox_branch: str
     stop_file: str
     log_file: str
+    state_file: str
     lock_file: str
     live_url: str
     owner_username: str
