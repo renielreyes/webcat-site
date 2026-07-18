@@ -8,6 +8,7 @@ injected.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import urllib.error
@@ -21,27 +22,25 @@ class ProviderError(RuntimeError):
 
 
 class GitHubProvider:
-    def __init__(self, repo_full: str, timeout: float = 15.0):
+    def __init__(self, repo_full: str, timeout: float = 15.0, token: str | None = None):
         self.repo_full = repo_full
         self.timeout = timeout
+        self._token = token   # the runner's merge key, injected as GH_TOKEN for gh calls (ship/undo etc.)
+
+    def _env(self) -> dict:
+        env = dict(os.environ)
+        if self._token:
+            env["GH_TOKEN"] = self._token
+            env["GITHUB_TOKEN"] = self._token
+        return env
 
     # --- GitHub ---
     def list_open_prs(self) -> list[dict]:
         """Open PRs as normalized dicts: number, title, head_branch, head_sha, is_draft, labels."""
+        out = self._run_gh(["pr", "list", "--repo", self.repo_full, "--state", "open",
+                            "--json", "number,title,headRefName,headRefOid,isDraft,labels"])
         try:
-            proc = subprocess.run(
-                ["gh", "pr", "list", "--repo", self.repo_full, "--state", "open",
-                 "--json", "number,title,headRefName,headRefOid,isDraft,labels"],
-                capture_output=True, text=True, timeout=self.timeout,
-            )
-        except FileNotFoundError:
-            raise ProviderError("the GitHub tool (gh) isn't available on this machine")
-        except subprocess.TimeoutExpired:
-            raise ProviderError("GitHub took too long to respond")
-        if proc.returncode != 0:
-            raise ProviderError("couldn't reach GitHub (check the sign-in)")
-        try:
-            raw = json.loads(proc.stdout or "[]")
+            raw = json.loads(out or "[]")
         except json.JSONDecodeError:
             raise ProviderError("GitHub returned something unexpected")
         return [self._normalize_pr(p) for p in raw]
@@ -59,7 +58,8 @@ class GitHubProvider:
 
     def _run_gh(self, args: list[str]) -> str:
         try:
-            proc = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=self.timeout)
+            proc = subprocess.run(["gh", *args], capture_output=True, text=True,
+                                  timeout=self.timeout, env=self._env())
         except FileNotFoundError:
             raise ProviderError("the GitHub tool (gh) isn't available on this machine")
         except subprocess.TimeoutExpired:
@@ -67,6 +67,39 @@ class GitHubProvider:
         if proc.returncode != 0:
             raise ProviderError((proc.stderr.strip().splitlines() or ["a GitHub command failed"])[-1])
         return proc.stdout
+
+    # --- publish operations (ship/undo) — need the merge key ---
+    def approve_pr(self, number: int, body: str = "Shipped via Command Center") -> None:
+        """Submit an approving review (satisfies 'require approvals' — the ship IS the approval)."""
+        self._run_gh(["pr", "review", str(number), "--repo", self.repo_full, "--approve", "-b", body])
+
+    def merge_pr(self, number: int, expected_sha: str | None = None) -> None:
+        """Merge the PR. If expected_sha is given, merge ONLY that exact head (refuses if it moved)."""
+        args = ["pr", "merge", str(number), "--repo", self.repo_full, "--merge"]
+        if expected_sha:
+            args += ["--match-head-commit", expected_sha]
+        self._run_gh(args)
+
+    def deploy_conclusion(self, sha: str, check_name: str) -> str | None:
+        """The named deploy check's conclusion on a commit: 'success'|'failure'|... or None if not finished/seen."""
+        try:
+            out = self._run_gh(["api", f"repos/{self.repo_full}/commits/{sha}/check-runs"])
+            runs = json.loads(out).get("check_runs", [])
+        except (ProviderError, json.JSONDecodeError):
+            return None
+        for r in runs:
+            if r.get("name") == check_name:
+                if r.get("status") != "completed":
+                    return "pending"
+                return r.get("conclusion")
+        return None
+
+    def default_branch_sha(self, branch: str = "main") -> str | None:
+        try:
+            out = self._run_gh(["api", f"repos/{self.repo_full}/commits/{branch}", "--jq", ".sha"])
+            return out.strip() or None
+        except ProviderError:
+            return None
 
     def pr_view(self, number: int) -> dict | None:
         """One PR by number, normalized — or None if it isn't found/open."""

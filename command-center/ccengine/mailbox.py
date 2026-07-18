@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import subprocess
 
 
@@ -19,34 +20,40 @@ class MailboxError(RuntimeError):
     pass
 
 
-def _gh_api(args: list[str], body: dict | None = None, timeout: float = 20.0):
-    """Run `gh api ...`; return (returncode, parsed-json-or-None)."""
-    stdin = None
-    full = ["gh", "api", *args]
-    if body is not None:
-        full += ["--input", "-"]
-        stdin = json.dumps(body)
-    try:
-        proc = subprocess.run(full, input=stdin, capture_output=True, text=True, timeout=timeout)
-    except FileNotFoundError:
-        raise MailboxError("the GitHub tool (gh) isn't available on this machine")
-    except subprocess.TimeoutExpired:
-        raise MailboxError("GitHub took too long to respond")
-    parsed = None
-    if proc.stdout.strip():
+def _make_gh_api(token: str | None = None):
+    def _gh_api(args: list[str], body: dict | None = None, timeout: float = 20.0):
+        """Run `gh api ...`; return (returncode, parsed-json-or-None)."""
+        stdin = None
+        full = ["gh", "api", *args]
+        if body is not None:
+            full += ["--input", "-"]
+            stdin = json.dumps(body)
+        env = dict(os.environ)
+        if token:
+            env["GH_TOKEN"] = token
+            env["GITHUB_TOKEN"] = token
         try:
-            parsed = json.loads(proc.stdout)
-        except json.JSONDecodeError:
-            parsed = None
-    return proc.returncode, parsed
+            proc = subprocess.run(full, input=stdin, capture_output=True, text=True, timeout=timeout, env=env)
+        except FileNotFoundError:
+            raise MailboxError("the GitHub tool (gh) isn't available on this machine")
+        except subprocess.TimeoutExpired:
+            raise MailboxError("GitHub took too long to respond")
+        parsed = None
+        if proc.stdout.strip():
+            try:
+                parsed = json.loads(proc.stdout)
+            except json.JSONDecodeError:
+                parsed = None
+        return proc.returncode, parsed
+    return _gh_api
 
 
 class MailboxWriter:
-    def __init__(self, repo_full: str, mailbox_branch: str, base_branch: str = "main", api=_gh_api):
+    def __init__(self, repo_full: str, mailbox_branch: str, base_branch: str = "main", api=None, token: str | None = None):
         self.repo = repo_full
         self.branch = mailbox_branch
         self.base = base_branch
-        self._api = api
+        self._api = api or _make_gh_api(token)
 
     def _ensure_branch(self) -> None:
         rc, _ = self._api([f"repos/{self.repo}/git/ref/heads/{self.branch}"])

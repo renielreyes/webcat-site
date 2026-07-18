@@ -6,11 +6,12 @@ Usage:
     cc.py run "<what>"      Start a change — hand a plain-English task to the builder.
     cc.py preview           See the pending change on a private test link (not live).
     cc.py hold [note]       Park the pending change so it won't publish.
+    cc.py ship              Publish the previewed change (approve + merge + confirm it went live).
     cc.py stop              Pause everything now (nothing new builds or publishes).
     cc.py resume            Un-pause.
     cc.py help              Show this help.
 
-Later phases add: ship, undo (3).
+Later phases add: undo (3b).
 
 Config: built-in defaults; override with a TOML file via CC_CONFIG=/path/to/cc.toml,
 or with CC_* environment variables. No secrets in config — see ccengine/config.py.
@@ -30,7 +31,7 @@ from ccengine.provider import GitHubProvider  # noqa: E402
 from ccengine.state import StateStore  # noqa: E402
 from ccengine.status import compute_status, render_status  # noqa: E402
 
-FUTURE = {"ship": 3, "undo": 3}
+FUTURE = {"undo": "3b"}
 
 
 def _load_config():
@@ -52,9 +53,14 @@ def _emit(result) -> int:
 
 
 def _deps(cfg):
-    provider = GitHubProvider(cfg.repo_full)
+    # cc.py is the OWNER's tool only, so it authenticates GitHub with the owner merge key
+    # when one is configured (else it falls back to the ambient `gh` login). The token's
+    # mere presence can't publish anything — only ship/undo ever call approve/merge; every
+    # other command just reads or queues. This keeps the owner's setup to one key file.
+    token = cfg.merge_token()
+    provider = GitHubProvider(cfg.repo_full, token=token)
     state = StateStore(cfg.path("state_file"))
-    mailbox = MailboxWriter(cfg.repo_full, cfg.mailbox_branch)
+    mailbox = MailboxWriter(cfg.repo_full, cfg.mailbox_branch, token=token)
     clog = log_mod.CommandLog(cfg.path("log_file"))
     return provider, state, mailbox, clog
 
@@ -127,6 +133,10 @@ def main(argv: list[str] | None = None) -> int:
         provider, state, _, _ = _deps(cfg)
         return _run_mutating(cfg, "hold", lambda: commands.hold(cfg, provider, state, " ".join(rest)))
 
+    if cmd == "ship":
+        provider, state, _, _ = _deps(cfg)
+        return _run_mutating(cfg, "ship", lambda: commands.ship(cfg, provider, state))
+
     if cmd == "stop":
         return _run_logged(cfg, "stop", lambda: commands.stop(cfg))
 
@@ -138,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     ui.error(f"I don't know the command '{cmd}'.",
-             "Available now: status, run, preview, hold, stop, resume, help. (Coming: ship, undo.)")
+             "Available now: status, run, preview, hold, ship, stop, resume, help. (Coming: undo.)")
     return 1
 
 
