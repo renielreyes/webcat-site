@@ -1,7 +1,7 @@
 # Task
 
 ## What I want
-Add a small, clearly-temporary test marker to the bottom of the holding page footer, reading exactly: Command Center live test 2 — safe to remove. Style it small and muted, on its own line. Change nothing else.
+remove the Command Center test marker from the holding page footer
 
 ## Where
 Only the files this change needs — inside this repository, nothing else.
@@ -14,7 +14,7 @@ Claude (the subscription the worker is signed in with).
 
 ## Rules
 - The charter (`Infra/AI Executor Charter.md`) is binding. Work ONLY in this repository.
-- Branch `handoff/cc-b29ab862`, commit, push, open a PR with a plain-English summary.
-- Write `results/cc-b29ab862.json` per the results contract.
+- Branch `handoff/cc-05b589a6`, commit, push, open a PR with a plain-English summary.
+- Write `results/cc-05b589a6.json` per the results contract.
 - HARD STOP at "PR ready" — never merge, never deploy, never touch DNS/GoDaddy/Azure/WebLab.
 - If anything is unclear or risky: stop, and explain plainly in the result file and PR.
