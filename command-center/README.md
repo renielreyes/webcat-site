@@ -3,8 +3,8 @@
 Plain-English control for the website. You type one word; the machine does the
 real Git/GitHub work. No browser, no code, no terminal beyond the command.
 
-> **Status: Phase 1** — `status`, `run`, `preview`, `hold` are built. The rest print
-> a friendly "coming in a later phase" message. See the build prompt
+> **Status: Phase 2** — `status`, `run`, `preview`, `hold`, `stop`, `resume` are built.
+> `ship`/`undo` print a friendly "coming in a later phase" message. See the build prompt
 > (`Command Center Engine — Claude Code Build Prompt`) for the full plan.
 >
 > **One wiring step for `run`:** `run` queues the task on a separate **mailbox
@@ -20,8 +20,8 @@ real Git/GitHub work. No browser, no code, no terminal beyond the command.
 | `run "…"` | Start a change — hand a plain-English task to the builder (one change in flight at a time). | **1 (built)** |
 | `preview` | See the pending change on a private test link before it's live; pins the exact version for `ship`. | **1 (built)** |
 | `hold` | Park the pending change so it won't publish. | **1 (built)** |
-| `stop` | Pause everything now (instant). | 2 |
-| `resume` | Un-pause. | 2 |
+| `stop` | Pause everything now (writes the local STOP flag the loop checks first). | **2 (built)** |
+| `resume` | Un-pause (clears the STOP flag). | **2 (built)** |
 | `ship` | Publish the pending change to the live site. | 3 |
 | `undo` | Roll the site back to the last known-good version. | 3 |
 

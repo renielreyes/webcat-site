@@ -119,6 +119,34 @@ def preview(cfg, provider, state_store: StateStore) -> Result:
                   fields={"pr": pr["number"], "previewed_sha": pr["head_sha"]})
 
 
+def stop(cfg) -> Result:
+    """Instant pause. Write the LOCAL stop file the worker loop checks first (before any network),
+    so nothing new builds or publishes. No confirmation — a kill switch must never add friction."""
+    sf = cfg.path("stop_file")
+    sf.parent.mkdir(parents=True, exist_ok=True)
+    already = sf.exists()
+    sf.write_text("paused by Command Center\n", encoding="utf-8")
+    if already:
+        return Result("ok", "Already paused — nothing new will build or publish. Type  resume  to continue.")
+    return Result("ok",
+                  "Paused. Nothing new will build or publish. (A build already running will finish on its own — "
+                  "up to a few minutes — then everything stays stopped.) Type  resume  when you're ready.",
+                  fields={"stop_file": str(sf)})
+
+
+def resume(cfg) -> Result:
+    """Clear the pause so the loop runs again. Owner action."""
+    sf = cfg.path("stop_file")
+    if not sf.exists():
+        return Result("ok", "The loop is already running — nothing to resume.")
+    try:
+        sf.unlink()
+    except OSError as e:
+        return Result("failed", f"Couldn't clear the pause — {e}.", exit_code=1)
+    return Result("ok", "Resumed — the loop is running again. Type  status  to check.",
+                  fields={"stop_file": str(sf)})
+
+
 def hold(cfg, provider, state_store: StateStore, note: str = "") -> Result:
     pending = state_store.get()
     pr_number = pending.pr_number if pending else None
