@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+# local, machine-specific config (copy from config.example.toml)
+config.toml
+cc.toml
