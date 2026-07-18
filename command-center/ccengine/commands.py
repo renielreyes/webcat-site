@@ -7,6 +7,7 @@ NEVER merge or deploy; they queue work, show a safe preview, or park a change.
 """
 from __future__ import annotations
 
+import time
 import uuid
 from dataclasses import dataclass, field
 
@@ -117,6 +118,102 @@ def preview(cfg, provider, state_store: StateStore) -> Result:
                   f'  {url}\n'
                   f'This is a private test link — not live yet. If it looks right, type  ship  to publish it.{tail}',
                   fields={"pr": pr["number"], "previewed_sha": pr["head_sha"]})
+
+
+def _await_deploy(provider, sha: str, check_name: str, *, sleep, timeout: float, interval: float):
+    """Poll the named deploy check on `sha` until it finishes or we run out of time.
+    Returns 'success' | 'failure' | <other conclusion> | 'pending' | None (None = never appeared)."""
+    waited = 0.0
+    last = provider.deploy_conclusion(sha, check_name)
+    while last is None or last == "pending":
+        if waited >= timeout:
+            break
+        sleep(interval)
+        waited += interval
+        last = provider.deploy_conclusion(sha, check_name)
+    return last
+
+
+def ship(cfg, provider, state_store: StateStore, *,
+         sleep=time.sleep, poll_timeout: float = 240.0, poll_interval: float = 6.0) -> Result:
+    """Publish the change the owner just previewed.
+
+    Approves and merges EXACTLY the previewed version through the human-merge gate
+    (using the owner's locked merge key — never the caged builder), then waits for the
+    deploy to finish so it can report the truth: merged vs. actually-live. Refuses unless
+    there's a single, previewed, un-held change and the merge key is present on this machine.
+    """
+    if cfg.merge_token() is None:
+        return Result("refused",
+                      "Publishing isn't set up on this machine yet — the owner merge key is missing. "
+                      "(Ship runs as you, with your own locked key; the builder can never publish.)",
+                      exit_code=1)
+
+    pending = state_store.get()
+    if pending is None or pending.pr_number is None:
+        return Result("refused",
+                      'Nothing is ready to publish. Start a change with  run "..."  and  preview  it first.')
+    if pending.held:
+        return Result("refused",
+                      f"Change #{pending.pr_number} is on hold — release it before publishing.")
+    if not pending.previewed_sha:
+        return Result("refused",
+                      "Preview it first, so I publish exactly the version you saw. Type  preview .")
+
+    num = pending.pr_number
+    pinned = pending.previewed_sha
+
+    # Did the change move since you previewed it? Friendly message here; the merge below is
+    # SHA-pinned too, so even a race can never publish a version you didn't review.
+    current = provider.pr_view(num)
+    if current is None:
+        return Result("failed",
+                      f"I couldn't find change #{num} on GitHub anymore — it may have been closed. "
+                      "Type  status  to see where things stand.", exit_code=1)
+    if current["head_sha"] != pinned:
+        return Result("refused",
+                      f"Change #{num} was updated after you previewed it. Type  preview  again to see the "
+                      "new version, then  ship .")
+
+    title = current["title"] or pending.task
+
+    try:
+        provider.approve_pr(num, body="Approved & shipped via Command Center (owner).")
+        provider.merge_pr(num, expected_sha=pinned)
+    except ProviderError as e:
+        return Result("failed",
+                      f"Couldn't publish change #{num} — {e}. Your live site was NOT changed; "
+                      "type  status , then try  ship  again or  hold  it.", exit_code=1)
+
+    merge_sha = provider.default_branch_sha("main") or ""
+
+    # Deploy-aware: don't claim "live" until the deploy check actually finishes.
+    conclusion = None
+    if merge_sha:
+        conclusion = _await_deploy(provider, merge_sha, cfg.deploy_check,
+                                   sleep=sleep, timeout=poll_timeout, interval=poll_interval)
+    live = provider.live_check(cfg.live_url)
+
+    state_store.clear()   # this change is done — clear the slot for the next one
+    fields = {"pr": num, "merge_sha": merge_sha, "title": title,
+              "previewed_sha": pinned, "deploy": conclusion or "unknown"}
+
+    if conclusion == "success" and live["ok"]:
+        return Result("ok",
+                      f'Published "{title}" (change #{num}). The deploy finished and your live site is up — '
+                      "it can take a minute for the newest version to reach everyone.",
+                      fields=fields)
+    if conclusion == "failure":
+        return Result("failed",
+                      f'Change #{num} was merged, but the publish step FAILED. Your previously-live site is '
+                      "still up and unchanged — nothing broke for visitors. Type  status ; we can re-run the "
+                      "publish or start a fix.",
+                      fields=fields, exit_code=1)
+    # Merged for real, deploy still finishing (slow or timed out) — merged is true, live is pending.
+    return Result("ok",
+                  f'Merged "{title}" (change #{num}). Publishing is finishing in the background — give it a '
+                  "minute, then type  status  to confirm it's live.",
+                  fields=fields)
 
 
 def stop(cfg) -> Result:

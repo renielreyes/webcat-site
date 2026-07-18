@@ -36,6 +36,8 @@ DEFAULTS = {
     # PATH to the owner merge key for ship/undo (Phase 3). Empty until provided by
     # the human at deploy time. NEVER put the key value here — only its path.
     "merge_key_path": "",
+    # The CI check that means "the live deploy finished" (Azure SWA's job name).
+    "deploy_check": "Build and Deploy Job",
 }
 
 REQUIRED = ["repo_dir", "repo_full", "live_url"]
@@ -54,10 +56,22 @@ class Config:
     owner_username: str
     robot_username: str
     merge_key_path: str
+    deploy_check: str
 
     # --- convenience accessors (expanded, absolute paths) ---
     def path(self, key: str) -> Path:
         return Path(os.path.expanduser(getattr(self, key))).expanduser()
+
+    def merge_token(self) -> str | None:
+        """Read the owner merge key from its locked file (ship/undo only). None if not configured."""
+        if not self.merge_key_path.strip():
+            return None
+        p = self.path("merge_key_path")
+        try:
+            tok = p.read_text(encoding="utf-8").strip()
+        except OSError:
+            return None
+        return tok or None
 
     @property
     def repo_owner(self) -> str:
