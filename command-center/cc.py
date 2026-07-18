@@ -6,9 +6,11 @@ Usage:
     cc.py run "<what>"      Start a change — hand a plain-English task to the builder.
     cc.py preview           See the pending change on a private test link (not live).
     cc.py hold [note]       Park the pending change so it won't publish.
+    cc.py stop              Pause everything now (nothing new builds or publishes).
+    cc.py resume            Un-pause.
     cc.py help              Show this help.
 
-Later phases add: stop, resume (2); ship, undo (3).
+Later phases add: ship, undo (3).
 
 Config: built-in defaults; override with a TOML file via CC_CONFIG=/path/to/cc.toml,
 or with CC_* environment variables. No secrets in config — see ccengine/config.py.
@@ -28,7 +30,7 @@ from ccengine.provider import GitHubProvider  # noqa: E402
 from ccengine.state import StateStore  # noqa: E402
 from ccengine.status import compute_status, render_status  # noqa: E402
 
-FUTURE = {"stop": 2, "resume": 2, "ship": 3, "undo": 3}
+FUTURE = {"ship": 3, "undo": 3}
 
 
 def _load_config():
@@ -74,6 +76,15 @@ def _run_mutating(cfg, cmd: str, fn) -> int:
         return 0
 
 
+def _run_logged(cfg, cmd: str, fn) -> int:
+    """For stop/resume: logged, but NO lock and NO pause-check — a kill switch must always work instantly."""
+    clog = log_mod.CommandLog(cfg.path("log_file"))
+    cid = clog.intent(cmd, actor=cfg.owner_username)
+    result = fn()
+    clog.result(cid, result.outcome, command_kind=cmd, **result.fields)
+    return _emit(result)
+
+
 def cmd_help() -> int:
     ui.heading(f"Command Center v{__version__}")
     ui.say(__doc__.strip())
@@ -116,12 +127,18 @@ def main(argv: list[str] | None = None) -> int:
         provider, state, _, _ = _deps(cfg)
         return _run_mutating(cfg, "hold", lambda: commands.hold(cfg, provider, state, " ".join(rest)))
 
+    if cmd == "stop":
+        return _run_logged(cfg, "stop", lambda: commands.stop(cfg))
+
+    if cmd == "resume":
+        return _run_logged(cfg, "resume", lambda: commands.resume(cfg))
+
     if cmd in FUTURE:
         ui.warn(f"'{cmd}' isn't built yet — it arrives in Phase {FUTURE[cmd]}. For now, try:  cc.py status")
         return 0
 
     ui.error(f"I don't know the command '{cmd}'.",
-             "Available now: status, run, preview, hold, help. (Coming: stop, resume, ship, undo.)")
+             "Available now: status, run, preview, hold, stop, resume, help. (Coming: ship, undo.)")
     return 1
 
 
