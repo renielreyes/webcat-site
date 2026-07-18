@@ -1,0 +1,16 @@
+# Command Center — example config.
+# Copy to ~/.webcat-loop/cc.toml (or point CC_CONFIG at it) and adjust.
+# NO SECRETS HERE. The owner merge key (Phase 3) is referenced ONLY by a file
+# path (merge_key_path); its value is never stored in this file or the repo.
+
+repo_dir       = "~/projects/webcat-site"        # the worker's clone on this machine
+repo_full      = "renielreyes/webcat-site"       # owner/name of the GitHub repo
+mailbox_branch = "mailbox"                        # task mailbox lives OFF the deploy branch
+stop_file      = "~/.webcat-loop/STOP"            # local, instant kill switch
+log_file       = "~/.webcat-loop/command-log.jsonl"
+lock_file      = "~/.webcat-loop/runner.lock"
+live_url       = "https://purple-meadow-0b838cc0f.7.azurestaticapps.net"
+owner_username = "renielreyes"
+robot_username = "webcat-worker-bot"
+
+# merge_key_path = "/home/owner/.secrets/cc-merge-key"   # Phase 3 only; 0600, unreadable by the worker
