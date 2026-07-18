@@ -8,9 +8,12 @@ injected.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import urllib.error
 import urllib.request
+
+_PREVIEW_RE = re.compile(r"https://[A-Za-z0-9.\-]+\.azurestaticapps\.net[^\s)\"']*")
 
 
 class ProviderError(RuntimeError):
@@ -53,6 +56,53 @@ class GitHubProvider:
             "is_draft": bool(p.get("isDraft", False)),
             "labels": [l.get("name", "") for l in (p.get("labels") or [])],
         }
+
+    def _run_gh(self, args: list[str]) -> str:
+        try:
+            proc = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=self.timeout)
+        except FileNotFoundError:
+            raise ProviderError("the GitHub tool (gh) isn't available on this machine")
+        except subprocess.TimeoutExpired:
+            raise ProviderError("GitHub took too long to respond")
+        if proc.returncode != 0:
+            raise ProviderError((proc.stderr.strip().splitlines() or ["a GitHub command failed"])[-1])
+        return proc.stdout
+
+    def pr_view(self, number: int) -> dict | None:
+        """One PR by number, normalized — or None if it isn't found/open."""
+        try:
+            out = self._run_gh(["pr", "view", str(number), "--repo", self.repo_full,
+                                "--json", "number,title,headRefName,headRefOid,isDraft,labels,state"])
+        except ProviderError:
+            return None
+        try:
+            return self._normalize_pr(json.loads(out))
+        except json.JSONDecodeError:
+            return None
+
+    def preview_url(self, number: int) -> str | None:
+        """The Azure SWA per-PR preview URL, scraped from the PR's comments (or None if not posted yet)."""
+        out = self._run_gh(["pr", "view", str(number), "--repo", self.repo_full, "--json", "comments"])
+        try:
+            comments = json.loads(out).get("comments", [])
+        except json.JSONDecodeError:
+            return None
+        found = None
+        for c in comments:  # take the most recent match
+            for m in _PREVIEW_RE.findall(c.get("body", "")):
+                found = m
+        return found
+
+    def ensure_label(self, name: str, color: str = "EDAE49", desc: str = "") -> None:
+        # --force creates the label or updates it if it already exists (idempotent).
+        self._run_gh(["label", "create", name, "--repo", self.repo_full, "-c", color, "-d", desc, "--force"])
+
+    def add_label(self, number: int, label: str) -> None:
+        self.ensure_label(label, desc="parked by Command Center — not to be published")
+        self._run_gh(["pr", "edit", str(number), "--repo", self.repo_full, "--add-label", label])
+
+    def add_comment(self, number: int, body: str) -> None:
+        self._run_gh(["pr", "comment", str(number), "--repo", self.repo_full, "--body", body])
 
     # --- live site ---
     def live_check(self, url: str) -> dict:
